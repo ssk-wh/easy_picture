@@ -1,40 +1,28 @@
 #pragma once
 
+#include "IImageNavigator.h"
 #include <QObject>
-#include <QString>
 #include <QStringList>
 
 namespace simplepic {
 
-class ImageNavigator : public QObject {
+class ImageNavigator : public QObject, public IImageNavigator {
     Q_OBJECT
 
 public:
     explicit ImageNavigator(QObject* parent = nullptr);
     ~ImageNavigator() override;
 
-    // 扫描指定文件所在目录，定位到该文件
-    void setCurrentFile(const QString& filePath);
-
-    // 当前文件路径
-    QString currentFile() const;
-
-    // 当前索引（从 0 开始），无文件时返回 -1
-    int currentIndex() const;
-
-    // 文件总数
-    int totalCount() const;
-
-    // 导航操作
-    bool goNext();
-    bool goPrevious();
-    bool jumpTo(int index);
-
-    // 获取指定索引的文件路径
-    QString fileAt(int index) const;
-
-    // 获取文件列表
-    QStringList fileList() const;
+    void setCurrentFile(const QString& filePath) override;
+    QString currentFile() const override;
+    int currentIndex() const override;
+    int totalCount() const override;
+    bool goNext() override;
+    bool goPrevious() override;
+    bool jumpTo(int index) override;
+    QString fileAt(int index) const override;
+    QStringList fileList() const override;
+    QObject* asQObject() override { return this; }
 
 signals:
     void currentFileChanged(const QString& filePath, int index, int total);

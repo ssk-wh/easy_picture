@@ -6,15 +6,19 @@
 namespace simplepic {
 
 class ImageView;
-class ImageLoader;
-class ImageCache;
-class ImageNavigator;
+class IImageLoader;
+class IImageCache;
+class IImageNavigator;
 
 class MainWindow : public QWidget {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget* parent = nullptr);
+    explicit MainWindow(
+        std::unique_ptr<IImageLoader> loader,
+        std::unique_ptr<IImageCache> cache,
+        std::unique_ptr<IImageNavigator> navigator,
+        QWidget* parent = nullptr);
     ~MainWindow() override;
 
     void openFile(const QString& filePath);
@@ -39,9 +43,9 @@ private:
     void showChangelog();
 
     ImageView* m_imageView = nullptr;
-    std::unique_ptr<ImageLoader> m_loader;
-    std::unique_ptr<ImageCache> m_cache;
-    std::unique_ptr<ImageNavigator> m_navigator;
+    std::unique_ptr<IImageLoader> m_loader;
+    std::unique_ptr<IImageCache> m_cache;
+    std::unique_ptr<IImageNavigator> m_navigator;
 
     QString m_currentFile;
 };

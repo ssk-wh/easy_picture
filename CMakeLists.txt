@@ -23,6 +23,9 @@ set(CORE_SOURCES
 )
 
 set(CORE_HEADERS
+    src/core/IImageLoader.h
+    src/core/IImageCache.h
+    src/core/IImageNavigator.h
     src/core/ImageLoader.h
     src/core/ImageCache.h
     src/core/ImageNavigator.h

@@ -1,10 +1,9 @@
 #include "MainWindow.h"
 #include "ImageView.h"
-#include "../core/ImageCache.h"
-#include "../core/ImageLoader.h"
-#include "../core/ImageNavigator.h"
-
 #include "ChangelogDialog.h"
+#include "../core/IImageLoader.h"
+#include "../core/IImageCache.h"
+#include "../core/IImageNavigator.h"
 
 #include <QDateTime>
 #include <QFileInfo>
@@ -16,11 +15,15 @@
 
 namespace simplepic {
 
-MainWindow::MainWindow(QWidget* parent)
+MainWindow::MainWindow(
+    std::unique_ptr<IImageLoader> loader,
+    std::unique_ptr<IImageCache> cache,
+    std::unique_ptr<IImageNavigator> navigator,
+    QWidget* parent)
     : QWidget(parent)
-    , m_loader(std::make_unique<ImageLoader>())
-    , m_cache(std::make_unique<ImageCache>())
-    , m_navigator(std::make_unique<ImageNavigator>())
+    , m_loader(std::move(loader))
+    , m_cache(std::move(cache))
+    , m_navigator(std::move(navigator))
 {
     setupUI();
     connectSignals();
@@ -54,15 +57,14 @@ void MainWindow::connectSignals()
             this, &MainWindow::onNextImage);
     connect(m_imageView, &ImageView::previousImageRequested,
             this, &MainWindow::onPreviousImage);
-
-    connect(m_loader.get(), &ImageLoader::imageLoaded,
-            this, &MainWindow::onImageLoaded);
-
-    connect(m_navigator.get(), &ImageNavigator::currentFileChanged,
-            this, &MainWindow::onCurrentFileChanged);
-
     connect(m_imageView, &ImageView::fileDropped,
             this, &MainWindow::openFile);
+
+    // 通过 asQObject() 桥接接口与 Qt 信号槽系统
+    connect(m_loader->asQObject(), SIGNAL(imageLoaded(QString, QPixmap)),
+            this, SLOT(onImageLoaded(QString, QPixmap)));
+    connect(m_navigator->asQObject(), SIGNAL(currentFileChanged(QString, int, int)),
+            this, SLOT(onCurrentFileChanged(QString, int, int)));
 }
 
 static bool isSvgFile(const QString& path)
@@ -89,7 +91,6 @@ static ImageInfo buildImageInfo(const QString& filePath)
     if (info.format.isEmpty())
         info.format = fi.suffix().toUpper();
 
-    // Try to get bit depth from image
     const QImage::Format fmt = reader.imageFormat();
     if (fmt != QImage::Format_Invalid)
         info.bitDepth = QImage::toPixelFormat(fmt).bitsPerPixel();
@@ -136,7 +137,6 @@ void MainWindow::openFile(const QString& filePath)
 
     m_currentFile = absPath;
 
-    // Scan directory and set navigator (deferred so the window appears fast)
     QTimer::singleShot(0, this, [this, absPath]() {
         m_navigator->setCurrentFile(absPath);
         updateWindowTitle();
@@ -195,7 +195,6 @@ void MainWindow::preloadNeighbors()
     if (current < 0 || total <= 0)
         return;
 
-    // Preload 2 images ahead and 2 behind
     for (int delta : {-2, -1, 1, 2}) {
         const int idx = current + delta;
         if (idx < 0 || idx >= total)

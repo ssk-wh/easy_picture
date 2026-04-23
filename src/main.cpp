@@ -1,4 +1,7 @@
 #include "ui/MainWindow.h"
+#include "core/ImageLoader.h"
+#include "core/ImageCache.h"
+#include "core/ImageNavigator.h"
 #include "version.h"
 #include <QApplication>
 #include <QIcon>
@@ -10,11 +13,13 @@ int main(int argc, char* argv[])
     app.setApplicationVersion(EASYPIC_VERSION);
     app.setWindowIcon(QIcon(QStringLiteral(":/resources/app-icon.svg")));
 
-    simplepic::MainWindow window;
+    simplepic::MainWindow window(
+        std::make_unique<simplepic::ImageLoader>(),
+        std::make_unique<simplepic::ImageCache>(),
+        std::make_unique<simplepic::ImageNavigator>());
     window.resize(1024, 768);
     window.show();
 
-    // 命令行指定文件则打开
     const QStringList args = app.arguments();
     if (args.size() > 1) {
         window.openFile(args.at(1));
