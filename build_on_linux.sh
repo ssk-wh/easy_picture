@@ -1,36 +1,50 @@
 #!/bin/bash
-# SimplePicture 编译脚本 (Linux)
-# 依赖：cmake >= 3.16, ninja-build, qtbase5-dev, libqt5svg5-dev
-#   sudo apt-get install build-essential cmake ninja-build qtbase5-dev libqt5svg5-dev
+set -e
 
-set -euo pipefail
+BUILD_DIR="build"
+BUILD_TYPE="Release"
+JOBS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BUILD_DIR="$SCRIPT_DIR/build"
-
-echo "=== SimplePicture Build (Linux) ==="
-echo "项目目录: $SCRIPT_DIR"
-echo ""
-
-# 检查依赖
-for tool in cmake ninja; do
-    if ! command -v "$tool" &>/dev/null; then
-        echo "ERROR: 缺少工具 '$tool'"
-        echo "请执行: sudo apt-get install build-essential cmake ninja-build qtbase5-dev libqt5svg5-dev"
-        exit 1
-    fi
+# Parse arguments
+for arg in "$@"; do
+    case "$arg" in
+        debug)    BUILD_TYPE="Debug" ;;
+        release)  BUILD_TYPE="Release" ;;
+        clean)    rm -rf "$BUILD_DIR"; echo "Cleaned."; exit 0 ;;
+        --clean)
+            rm -f "$BUILD_DIR/CMakeCache.txt"
+            rm -rf "$BUILD_DIR/CMakeFiles"
+            echo "CMake cache cleared."
+            ;;
+        *) echo "Unknown option: $arg"; exit 1 ;;
+    esac
 done
 
-echo "[1/2] CMake 配置..."
-cmake -S "$SCRIPT_DIR" -B "$BUILD_DIR" \
-    -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_TESTS=OFF
+echo "================================================"
+echo "  SimplePicture Build ($BUILD_TYPE)"
+echo "================================================"
 
-echo ""
-echo "[2/2] 编译..."
-cmake --build "$BUILD_DIR"
+# Clean previous build
+if [ -d "$BUILD_DIR" ]; then
+    echo "Cleaning previous build..."
+    rm -rf "$BUILD_DIR"
+fi
 
-echo ""
-echo "=== 编译成功 ==="
-echo "输出: $BUILD_DIR/SimplePicture"
+# Configure
+echo "[1/2] CMake configure..."
+cmake -S . -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DBUILD_TESTS=OFF
+
+# Build
+echo "[2/2] Building (-j$JOBS)..."
+cmake --build "$BUILD_DIR" -j "$JOBS"
+
+if [ -f "$BUILD_DIR/SimplePicture" ]; then
+    SIZE=$(stat -c%s "$BUILD_DIR/SimplePicture" 2>/dev/null || stat -f%z "$BUILD_DIR/SimplePicture" 2>/dev/null || echo "?")
+    echo "================================================"
+    echo "  Build succeeded: $BUILD_DIR/SimplePicture"
+    echo "  Size: $SIZE bytes"
+    echo "================================================"
+else
+    echo "[ERROR] Build completed but executable not found!"
+    exit 1
+fi

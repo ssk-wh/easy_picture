@@ -1,8 +1,14 @@
 #!/bin/bash
 # SimplePicture Installer Build Script
-# Usage: bash installer/build_installer.sh
+# Usage: bash installer/build_installer.sh [--skip-build]
+#   --skip-build  Skip cmake build (use existing build/SimplePicture.exe)
 
 set -e
+
+SKIP_BUILD=0
+for arg in "$@"; do
+    [ "$arg" = "--skip-build" ] && SKIP_BUILD=1
+done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -25,11 +31,15 @@ if [ -z "$QT_PLUGIN_DIR" ] || [ ! -d "$QT_PLUGIN_DIR" ]; then
 fi
 echo "  Qt plugins: $QT_PLUGIN_DIR"
 
-# Step 1: Build Release version
-echo "[1/3] Building Release version..."
-cd "$PROJECT_DIR"
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
-cmake --build build --config Release
+# Step 1: Build Release version (skipped if --skip-build)
+if [ "$SKIP_BUILD" -eq 0 ]; then
+    echo "[1/3] Building Release version..."
+    cd "$PROJECT_DIR"
+    cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
+    cmake --build build --config Release
+else
+    echo "[1/3] Build skipped (--skip-build)."
+fi
 
 # Step 2: Collect files to dist/
 echo "[2/3] Collecting files..."
