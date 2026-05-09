@@ -37,6 +37,9 @@ __pycache__/
 tmp/
 temp/
 
+# 个人 SDD 工作流（每个开发者各自维护）
+plans/
+
 # 日志
 *.log
 logs/

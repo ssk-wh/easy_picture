@@ -5,11 +5,13 @@
 #include "../core/IImageCache.h"
 #include "../core/IImageNavigator.h"
 
+#include <QCloseEvent>
 #include <QDateTime>
 #include <QFileInfo>
 #include <QImageReader>
 #include <QKeyEvent>
 #include <QPainter>
+#include <QSettings>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -27,6 +29,7 @@ MainWindow::MainWindow(
 {
     setupUI();
     connectSignals();
+    restoreWindowState();
 }
 
 MainWindow::~MainWindow() = default;
@@ -221,6 +224,28 @@ void MainWindow::showChangelog()
 {
     ChangelogDialog dlg(this);
     dlg.exec();
+}
+
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+    saveWindowState();
+    QWidget::closeEvent(event);
+}
+
+void MainWindow::saveWindowState()
+{
+    QSettings settings;
+    settings.setValue(QStringLiteral("MainWindow/geometry"), saveGeometry());
+}
+
+void MainWindow::restoreWindowState()
+{
+    QSettings settings;
+    const QByteArray geometry =
+        settings.value(QStringLiteral("MainWindow/geometry")).toByteArray();
+    if (!geometry.isEmpty()) {
+        restoreGeometry(geometry);
+    }
 }
 
 void MainWindow::updateWindowTitle()

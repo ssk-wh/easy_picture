@@ -26,6 +26,7 @@ public:
 protected:
     void keyPressEvent(QKeyEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
+    void closeEvent(QCloseEvent* event) override;
 
 private slots:
     void onNextImage();
@@ -36,6 +37,8 @@ private slots:
 private:
     void setupUI();
     void connectSignals();
+    void saveWindowState();
+    void restoreWindowState();
     void displayFile(const QString& filePath);
     void loadCurrentImage();
     void preloadNeighbors();

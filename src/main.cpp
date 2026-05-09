@@ -9,6 +9,7 @@
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
+    app.setOrganizationName("SimplePicture");
     app.setApplicationName("SimplePicture");
     app.setApplicationVersion(EASYPIC_VERSION);
     app.setWindowIcon(QIcon(QStringLiteral(":/resources/app-icon.svg")));
@@ -17,7 +18,6 @@ int main(int argc, char* argv[])
         std::make_unique<simplepic::ImageLoader>(),
         std::make_unique<simplepic::ImageCache>(),
         std::make_unique<simplepic::ImageNavigator>());
-    window.resize(1024, 768);
     window.show();
 
     const QStringList args = app.arguments();
